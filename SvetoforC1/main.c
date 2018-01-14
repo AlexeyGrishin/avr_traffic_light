@@ -35,9 +35,9 @@
 #define INTERMODE_DELAY_MS 5000
 
 #ifdef DEBUG
-#define TURN_OFF_AFTER_MS 60L*1000L
+#define TURN_OFF_AFTER_MS 10L*1000L
 #else
-#define TURN_OFF_AFTER_MS 3L*60L*1000L
+#define TURN_OFF_AFTER_MS 1L*60L*1000L
 #endif
 
 #define BUTTON_DELAY_MS 500
@@ -47,12 +47,13 @@ volatile unsigned char newMode = MODE_OLD;
 volatile long msSinceStart = 0;
 
 #define TIMER_SCALE 256L
-#define F_CPU 16000000L
+#define F_CPU 4800000L / 8L
 #define TIMER_MAX_VALUE 256L
-// something around 244. we do not need very good precision here
+// something around 9. we do not need very good precision here
 #define TIMER_OVERFLOWS_PER_S (F_CPU / (TIMER_MAX_VALUE * TIMER_SCALE))
-// something around 4
+// something around 100
 #define TIMER_MS_IN_1_OVERFLOW (1000 / TIMER_OVERFLOWS_PER_S)
+
 
 ISR(INT0_vect) {
 	newMode = mode == MODE_1 ? MODE_2 : MODE_1;
@@ -79,7 +80,7 @@ long millis() {
 	return temp;
 }
 
-#define SHOW(r1,y1,g1,r2,g2) {PORTB = (PORTB & (1 << BUTTON)) | (r1 << RED1) | (g1 << GREEN1) | (r2 << RED2) | (g2 << GREEN2) YELLOW(|(y1 << YELLOW1));}
+#define SHOW(r1,y1,g1,r2,g2) {PORTB = (1 << BUTTON) | (r1 << RED1) | (g1 << GREEN1) | (r2 << RED2) | (g2 << GREEN2) YELLOW(|(y1 << YELLOW1));}
 
 void delay(int ms) {
 	long now = millis();
@@ -119,6 +120,7 @@ void sleep() {
 	modeOff();
 	mode = MODE_OFF;
 	newMode = MODE_OFF;
+	GIMSK |= (1 << INT0);
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	sleep_enable();
 	sleep_cpu();
@@ -128,25 +130,21 @@ void sleep() {
 int main(void)
 {
 	//1. setup pins (5 outputs, 1 input) - DDRB
-	PORTB = (1 << BUTTON); //pull-up
 	DDRB = (1 << RED1) | (1 << GREEN1) | (1 << RED2) | (1 << GREEN2) YELLOW(| (1 < YELLOW1));
+	PORTB = (1 << BUTTON); //pull-up
 	
 	//1.5 setup button interrupts
 	GIMSK |= (1 << INT0);
 	
 	//1.6 setup timer
 	#if TIMER_SCALE == 256
-		#ifdef DEBUG
-	TCCR0B |= (1 << CS00); //no scale
-		#else
 	TCCR0B |= (1 << CS02); //scale 256
-	#endif
 	#else
 		#error "Not defined!"
 	#endif
 	TIMSK0 |= (1<< TOIE0); //interrupt by overflow
 	restartTimer();	//calls 'sei' inside
-	
+
     while (1) 
     {
 		long now = millis();
