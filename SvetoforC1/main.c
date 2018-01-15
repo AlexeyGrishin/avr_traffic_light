@@ -7,7 +7,7 @@
 */
 #ifdef DEBUG
 //I do not use yellow pin in debug 'cos it is used as RESET
-#define YELLOW(x)
+#define YELLOW(x) 0
 #else
 #define YELLOW(x) x
 #endif 
@@ -37,7 +37,7 @@
 #ifdef DEBUG
 #define TURN_OFF_AFTER_MS 10L*1000L
 #else
-#define TURN_OFF_AFTER_MS 1L*60L*1000L
+#define TURN_OFF_AFTER_MS 3L*60L*1000L
 #endif
 
 #define BUTTON_DELAY_MS 500
@@ -80,7 +80,7 @@ long millis() {
 	return temp;
 }
 
-#define SHOW(r1,y1,g1,r2,g2) {PORTB = (1 << BUTTON) | (r1 << RED1) | (g1 << GREEN1) | (r2 << RED2) | (g2 << GREEN2) YELLOW(|(y1 << YELLOW1));}
+#define SHOW(r1,y1,g1,r2,g2) {PORTB = (1 << BUTTON) | (r1 << RED1) | (g1 << GREEN1) | (r2 << RED2) | (g2 << GREEN2) | YELLOW((y1 << YELLOW1));}
 
 void delay(int ms) {
 	long now = millis();
@@ -130,7 +130,7 @@ void sleep() {
 int main(void)
 {
 	//1. setup pins (5 outputs, 1 input) - DDRB
-	DDRB = (1 << RED1) | (1 << GREEN1) | (1 << RED2) | (1 << GREEN2) YELLOW(| (1 < YELLOW1));
+	DDRB = (1 << RED1) | (1 << GREEN1) | (1 << RED2) | (1 << GREEN2) | YELLOW((1 << YELLOW1));
 	PORTB = (1 << BUTTON); //pull-up
 	
 	//1.5 setup button interrupts
